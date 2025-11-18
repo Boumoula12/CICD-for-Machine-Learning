@@ -30,3 +30,11 @@ jobs:
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make eval
+
+      - name: Update Branch (commit trained model + results)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          USER_NAME: ${{ secrets.USER_NAME }}
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+        run: |
+          make update-branch USER_NAME=$USER_NAME USER_EMAIL=$USER_EMAIL
