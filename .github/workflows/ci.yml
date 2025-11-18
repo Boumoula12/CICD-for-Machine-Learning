@@ -2,9 +2,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions: write-all
@@ -15,37 +15,37 @@ jobs:
 
     steps:
       # ---------------------------------------------------------
-      # CHECKOUT REPO
+      # 1. CHECKOUT REPO
       # ---------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
 
       # ---------------------------------------------------------
-      # INSTALL CML (pour rapport)
+      # 2. INSTALL CML (pour rapport)
       # ---------------------------------------------------------
       - name: Setup CML
         uses: iterative/setup-cml@v2
 
       # ---------------------------------------------------------
-      # INSTALL DEPENDENCIES
+      # 3. INSTALL DEPENDENCIES
       # ---------------------------------------------------------
       - name: Install dependencies
         run: make install
 
       # ---------------------------------------------------------
-      # FORMAT CODE
+      # 4. FORMAT CODE
       # ---------------------------------------------------------
       - name: Format
         run: make format
 
       # ---------------------------------------------------------
-      # TRAIN MODEL
+      # 5. TRAIN MODEL
       # ---------------------------------------------------------
       - name: Train model
         run: make train
 
       # ---------------------------------------------------------
-      # EVALUATION + CML REPORT
+      # 6. EVALUATION + CML REPORT
       # ---------------------------------------------------------
       - name: Evaluation and CML report
         env:
@@ -53,7 +53,7 @@ jobs:
         run: make eval
 
       # ---------------------------------------------------------
-      # UPDATE BRANCH (COMMIT AUTOMATIQUE)
+      # 7. UPDATE BRANCH (COMMIT AUTOMATIQUE)
       # ---------------------------------------------------------
       - name: Update Branch
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -63,33 +63,42 @@ jobs:
         run: make update-branch USER_NAME=$NAME USER_EMAIL=$EMAIL
 
       # ---------------------------------------------------------
-      # DEPLOYMENT TO HUGGING FACE SPACE
+      # 8. DEPLOYMENT TO HUGGING FACE SPACE
       # ---------------------------------------------------------
       - name: Deployment To Hugging Face
         env:
-          HF_TOKEN: ${{ secrets.HF }}   # <- ton secret dans GitHub s'appelle HF
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          echo "🔍 Vérification du HF_TOKEN..."
+          if [ -z "$HF_TOKEN" ]; then
+            echo "❌ ERREUR : HF_TOKEN est VIDE. Vérifie ton secret GitHub !"
+            exit 1
+          else
+            echo "✅ HF_TOKEN détecté."
+          fi
+
+          echo "📦 Installation du client HuggingFace..."
           pip install "huggingface_hub[cli]"
 
-          # Login à Hugging Face avec le token du secret
-          echo "$HF_TOKEN" | huggingface-cli login --token
+          echo "🔑 Connexion à HuggingFace..."
+          huggingface-cli login --token "$HF_TOKEN"
 
-          echo "📤 Uploading Model folder..."
+          echo "📤 Upload Model..."
           huggingface-cli upload Abdelouafi/iris-classification-cicd \
             ./Model /Model \
             --repo-type=space \
             --commit-message "Sync Model"
 
-          echo "📤 Uploading Results/Metrics..."
+          echo "📤 Upload Metrics..."
           huggingface-cli upload Abdelouafi/iris-classification-cicd \
             ./Results /Results \
             --repo-type=space \
             --commit-message "Sync Metrics"
 
-          echo "📤 Uploading App files..."
+          echo "📤 Upload App files..."
           huggingface-cli upload Abdelouafi/iris-classification-cicd \
             ./App /App \
             --repo-type=space \
             --commit-message "Sync App"
 
-          echo "🚀 Deployment complete!"
+          echo "🚀 Deployment completed successfully!"
