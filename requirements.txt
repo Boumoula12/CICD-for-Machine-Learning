@@ -1,6 +1,7 @@
 pandas
-numpy
 scikit-learn
 matplotlib
-seaborn
 skops
+gradio
+huggingface_hub==0.24.6
+black
