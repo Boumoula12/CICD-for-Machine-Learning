@@ -67,12 +67,12 @@ jobs:
       # ---------------------------------------------------------
       - name: Deployment To Hugging Face
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF }}   # <- ton secret dans GitHub s'appelle HF
         run: |
           pip install "huggingface_hub[cli]"
 
-          # Login to HF
-          huggingface-cli login --token $HF_TOKEN
+          # Login à Hugging Face avec le token du secret
+          echo "$HF_TOKEN" | huggingface-cli login --token
 
           echo "📤 Uploading Model folder..."
           huggingface-cli upload Abdelouafi/iris-classification-cicd \
