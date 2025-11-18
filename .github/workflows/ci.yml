@@ -15,37 +15,37 @@ jobs:
 
     steps:
       # ---------------------------------------------------------
-      # 1. CHECKOUT REPO
+      # CHECKOUT REPO
       # ---------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
 
       # ---------------------------------------------------------
-      # 2. INSTALL CML (pour rapport)
+      # INSTALL CML (pour le rapport)
       # ---------------------------------------------------------
       - name: Setup CML
         uses: iterative/setup-cml@v2
 
       # ---------------------------------------------------------
-      # 3. INSTALL DEPENDENCIES
+      # INSTALL DEPENDENCIES
       # ---------------------------------------------------------
       - name: Install dependencies
         run: make install
 
       # ---------------------------------------------------------
-      # 4. FORMAT CODE
+      # FORMAT CODE
       # ---------------------------------------------------------
       - name: Format
         run: make format
 
       # ---------------------------------------------------------
-      # 5. TRAIN MODEL
+      # TRAIN MODEL
       # ---------------------------------------------------------
       - name: Train model
         run: make train
 
       # ---------------------------------------------------------
-      # 6. EVALUATION + CML REPORT
+      # EVALUATION + CML REPORT
       # ---------------------------------------------------------
       - name: Evaluation and CML report
         env:
@@ -53,7 +53,7 @@ jobs:
         run: make eval
 
       # ---------------------------------------------------------
-      # 7. UPDATE BRANCH (COMMIT AUTOMATIQUE)
+      # UPDATE BRANCH (COMMIT AUTOMATIQUE DES ARTEFACTS)
       # ---------------------------------------------------------
       - name: Update Branch
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -63,42 +63,41 @@ jobs:
         run: make update-branch USER_NAME=$NAME USER_EMAIL=$EMAIL
 
       # ---------------------------------------------------------
-      # 8. DEPLOYMENT TO HUGGING FACE SPACE
+      # DEPLOYMENT TO HUGGING FACE SPACE
       # ---------------------------------------------------------
       - name: Deployment To Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SPACE_ID: "Abdelouafi/iris-classification-cicd"
         run: |
-          echo "🔍 Vérification du HF_TOKEN..."
-          if [ -z "$HF_TOKEN" ]; then
-            echo "❌ ERREUR : HF_TOKEN est VIDE. Vérifie ton secret GitHub !"
-            exit 1
-          else
-            echo "✅ HF_TOKEN détecté."
-          fi
-
-          echo "📦 Installation du client HuggingFace..."
+          echo "📦 Installing huggingface_hub CLI..."
           pip install "huggingface_hub[cli]"
 
-          echo "🔑 Connexion à HuggingFace..."
+          echo "🔐 Login to Hugging Face..."
           huggingface-cli login --token "$HF_TOKEN"
 
-          echo "📤 Upload Model..."
-          huggingface-cli upload Abdelouafi/iris-classification-cicd \
+          echo "📤 Upload Model folder..."
+          huggingface-cli upload "$SPACE_ID" \
             ./Model /Model \
             --repo-type=space \
             --commit-message "Sync Model"
 
-          echo "📤 Upload Metrics..."
-          huggingface-cli upload Abdelouafi/iris-classification-cicd \
+          echo "📤 Upload Results (metrics, plots)..."
+          huggingface-cli upload "$SPACE_ID" \
             ./Results /Results \
             --repo-type=space \
-            --commit-message "Sync Metrics"
+            --commit-message "Sync Results"
 
-          echo "📤 Upload App files..."
-          huggingface-cli upload Abdelouafi/iris-classification-cicd \
-            ./App /App \
+          echo "📤 Upload Gradio app file as app.py..."
+          huggingface-cli upload "$SPACE_ID" \
+            ./App/iris_app.py /app.py \
             --repo-type=space \
-            --commit-message "Sync App"
+            --commit-message "Sync Gradio app"
+
+          echo "📤 Upload app requirements to root..."
+          huggingface-cli upload "$SPACE_ID" \
+            ./App/requirements.txt /requirements.txt \
+            --repo-type=space \
+            --commit-message "Sync app requirements"
 
           echo "🚀 Deployment completed successfully!"
