@@ -1,0 +1,6 @@
+pandas
+scikit-learn
+matplotlib
+skops
+gradio
+huggingface_hub==0.24.6

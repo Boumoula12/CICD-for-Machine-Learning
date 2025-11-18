@@ -1,0 +1,32 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup CML
+        uses: iterative/setup-cml@v2
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Train model
+        run: make train
+
+      - name: Evaluation and CML report
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make eval
